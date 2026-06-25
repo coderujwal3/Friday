@@ -1,2 +1,16 @@
 .env
 pretrained_models/
+friday/auth/face_db/ujwal.npy
+friday/auth/face_db/gaurav.npy
+friday/auth/voice_db/ujwal_01.npy
+friday/auth/voice_db/ujwal_02.npy
+friday/auth/voice_db/ujwal_03.npy
+friday/auth/voice_db/ujwal_04.npy
+friday/auth/voice_db/ujwal_05.npy
+friday/auth/voice_db/ujwal_06.npy
+friday/auth/voice_db/ujwal_07.npy
+friday/auth/voice_db/ujwal_08.npy
+friday/auth/voice_db/ujwal_09.npy
+friday/auth/voice_db/ujwal_10.npy
+
+friday/tools/conversation.py

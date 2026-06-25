@@ -49,7 +49,7 @@ flowchart TD
   H -- Yes --> I[Run matched tool/function]
   H -- No --> J[Call LLM router for help]
   J --> I
-  I --> K[Produce response (speak/text)]
+  I --> K[Produce response]
   K --> L[End or wait for next wake]
 ```
 
@@ -83,9 +83,12 @@ Open a terminal, go to the project folder, and run:
 cd Friday
 python main.py --text-mode
 ```
-
 - `--text-mode`: lets you type commands instead of speaking.
-- `--skip-auth`: skips face/voice checks for quick testing.
+- `--llm-router`: Use an LLM as a fallback when embedding confidence is low.
+- `--no-speech`: Print responses without speaking them aloud.
+- `--threshold`: Minimum embedding confidence required to execute a tool.
+- `--voice-threshold`: Minimum speaker similarity required for voice verification.
+
 
 Example commands to try:
 
