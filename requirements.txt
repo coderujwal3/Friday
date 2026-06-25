@@ -1,0 +1,18 @@
+# Core Friday assistant dependencies
+numpy>=1.26
+scikit-learn>=1.4
+sentence-transformers>=2.7
+openai>=1.40
+SpeechRecognition>=3.10
+pyttsx3>=2.90
+opencv-python>=4.9
+insightface>=0.7
+speechbrain>=1.0
+torch>=2.2
+openwakeword>=0.6
+pywhatkit
+python-dotenv>=1.0
+silero-vad
+noisereduce
+psutil
+pyaudio
