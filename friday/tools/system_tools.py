@@ -9,20 +9,22 @@ import re
 import psutil
 import pyautogui as pg
 from pathlib import Path
+from dotenv import load_dotenv
 
 from friday.config import AssistantConfig
 from friday.tools.registry import Tool, ToolRegistry
 from friday.speaker import Speaker
 # from friday.tools.conversation import ConversationHandler
 
+load_dotenv()
 
 CONTACT_BOOK = {
-    "mummy": "+918447219261",
-    "khushi": "+917012195977",
-    "myself": "+918528938966",
+    "mummy": os.getenv("MUMMY"),
+    "sister": os.getenv("SISTER"),
+    "myself": os.getenv("MYSELF"),
     
     # group contacts
-    "multiverse walkers": "BD61rHxMAAtE0EPrD1bRsj"
+    "multiverse walkers": os.getenv("MULTIVERSEWALKERS")
 }
 
 
