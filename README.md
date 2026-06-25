@@ -1,4 +1,4 @@
-# Friday Assistant — A Kid-Friendly Guide
+# Friday Assistant
 
 Welcome! This project is called "Friday" and it's like Tony Stark's helper, Friday - but smaller and made for your own computer.
 
