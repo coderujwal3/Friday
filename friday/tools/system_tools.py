@@ -47,8 +47,33 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         if shutil.which(executable) is None:
             speaker.say(f"Matched the tool, but '{executable}' is not installed on this machine.")
             return f"Matched the tool, but '{executable}' is not installed on this machine."
+        print(f"{("-"*20)} command for execution {command} {("-"*20)}")
         subprocess.Popen(command)
         return success_message
+    
+    def is_open(program: str) -> bool:
+        dictionary = {
+            "chrome": ["chrome.exe", "chrome", "google-chrome"],
+            "code": ["code.exe", "code", "visual studio code"],
+            "whatsapp": ["WhatsApp.exe", "WhatsApp.Root.exe", "WhatsApp"]
+        }
+
+        if program in dictionary:
+            # Iterate through all running processes
+            for proc in psutil.process_iter(['name']):
+                try:
+                    # Check if any running process name matches Chrome
+                    if proc.info['name'].lower() in dictionary[program]:
+                        return True
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            return False
+        else:
+            speaker.say("Application is already closed. If not then check codebase (is_open() function)")
+            return False
+        
+
+
     
     def open_code(_: str) -> str:
         candidates = ["open code", "open vs code", "open visual studio code", "open friday code", "open IDE"]
@@ -69,14 +94,45 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                     speaker.say("Opening VS Code IDE")
                     return "Opening Visual Studio Code IDE"
 
-    def open_chrome(_: str) -> str:
+    def open_chrome(asks: str) -> str:
         candidates = ["chrome", "google-chrome", "google-chrome-stable", "chromium", "chrome kholo", "open browser", "chrome browser"]
-        for candidate in candidates:
-            if shutil.which(candidate) is not None:
-                subprocess.Popen([candidate])
-                speaker.say("Opening Chrome")
-                return "Opening Chrome."
-        return launch(_open_command("https://www.google.com"), "Opening your default browser.")
+        # for candidate in candidates:
+        #     if shutil.which(candidate) is not None:
+        #         subprocess.Popen([candidate])
+        #         speaker.say("Opening Chrome")
+        #         return "Opening Chrome."
+        # return launch(_open_command("https://www.google.com"), "Opening your default browser.")
+
+        system = platform.system().lower()
+        chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
+        # Compare normalized, non-empty env values to avoid empty-string matches
+        asks_lower = asks.lower() if asks else ""
+        p1 = os.getenv("PROFILE_1")
+        p2 = os.getenv("PROFILE_2")
+        p3 = os.getenv("PROFILE_3")
+        p5 = os.getenv("PROFILE_5")
+        p6 = os.getenv("PROFILE_6")
+        p7 = os.getenv("PROFILE_7")
+
+        speaker.say("Opening Chrome sir")
+        if p1 and p1.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 1'])
+        elif p2 and p2.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 2'])
+        elif p3 and p3.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 3'])
+        elif p5 and p5.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 5'])
+        elif p6 and p6.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 6'])
+        elif p7 and p7.lower() in asks_lower:
+            subprocess.Popen([chrome_path, '--profile-directory=Profile 7'])
+        else:
+            subprocess.Popen([chrome_path, '--profile-directory=Default'])
+        
+        # return launch(command, "Opening Chrome")
+        return "Opening Chrome"
+
     
     def open_youtube(_:str) -> str:
         candidates = ["youtube", "YT", "open youtube", "open YT"]
@@ -174,63 +230,52 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     
     def close_whatsapp(_: str) -> str:
         print("Closing WhatsApp Application.")
-        speaker.say("Closing WhatsApp application")
-        time.sleep(2)
-        try:
-            os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
-        except Exception as e:
-            speaker.say("WhatsApp application is not open, or there is any error in function")
-            return "WhatsApp issue (close_whatsapp)"
+        if is_open("whatsapp"):
+            speaker.say("Closing WhatsApp application")
+            time.sleep(2)
+            try:
+                os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+            except Exception as e:
+                speaker.say("WhatsApp application is not open, or there is any error in function")
+                return "WhatsApp issue (close_whatsapp)"
         return "WhatsApp Application closed."
     
     def close_code(_: str) -> str:
         print("Closing Visual Studio Code IDE")
-        try:
-            speaker.say("Closing VS Code IDE")
-            os.system("taskkill /f /im code.exe")
-        except Exception as e:
-            speaker.say("Failed to close VS Code IDE")
-            return "Failed to close IDE: close_code"
+        if is_open("code"):
+            try:
+                speaker.say("Closing VS Code IDE")
+                os.system("taskkill /f /im code.exe")
+            except Exception as e:
+                speaker.say("Failed to close VS Code IDE")
+                return "Failed to close IDE: close_code"
         return "Closed VS Code IDE"
     
     def close_chrome(_: str) -> str:
         print("Closing Chrome.")
-        speaker.say("Closing Chrome")
-        time.sleep(2)
-        try:
-            os.system("taskkill /f /im chrome.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
-        except Exception as e:
-            speaker.say("Chrome is not open, or there is any error in function")
-            return "Chrome issue (close_chrome)"
+        if is_open("chrome"):
+            speaker.say("Closing Chrome")
+            time.sleep(2)
+            try:
+                os.system("taskkill /f /im chrome.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+            except Exception as e:
+                speaker.say("Chrome is not open, or there is any error in function")
+                return "Chrome issue (close_chrome)"
         return "Google Chrome closed."
     
     def close_chrome_tabs(_:str) -> str:
-        if is_chrome_open():
-            open_chrome("Open Chrome")
+        if is_open("chrome"):
             time.sleep(1.5)
             try:
+                open_chrome("open chrome")
                 pg.hotkey("ctrl","shift","w")
                 speaker.say("Closed All tabs")
                 return "Closed all tabs"
             except Exception as e:
                 speaker.say("There is any issue in closing all tabs")
                 return "There is any issue in closing all tabs"
-        else:
-            speaker.say("Chrome Browser is already closed")
-            return "Chrome browser is already closed"
-
-    def is_chrome_open() -> bool:
-        process_names = ["chrome.exe", "chrome", "google-chrome"]
-        # Iterate through all running processes
-        for proc in psutil.process_iter(['name']):
-            try:
-                # Check if any running process name matches Chrome
-                if proc.info['name'].lower() in process_names:
-                    return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                pass
-                
-        return False
+        speaker.say("Chrome Browser is already closed")
+        return "Chrome browser is already closed"
         
 
     def current_time(_: str) -> str:
