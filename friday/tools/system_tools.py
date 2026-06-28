@@ -1,4 +1,6 @@
 import datetime as dt
+import getpass
+import json
 import os
 import platform
 import shutil
@@ -42,6 +44,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     speaker = Speaker()
 
 
+    # utilities methods (launch any command, check application is open or not, finding any directory or file, etc.)
     def launch(command: list[str], success_message: str) -> str:
         executable = command[0]
         if shutil.which(executable) is None:
@@ -71,10 +74,50 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         else:
             speaker.say("Application is already closed. If not then check codebase (is_open() function)")
             return False
-        
+
+
+    def _get_chrome_local_state_path() -> Path | None:
+        username = getpass.getuser()
+        if platform.system().lower() == "windows":
+            return Path("C:/Users") / username / "AppData/Local/Google/Chrome/User Data/Local State"
+
+        mac_path = Path("/Users") / username / "Library/Application Support/Google/Chrome/Local State"
+        if mac_path.exists():
+            return mac_path
+
+        linux_path = Path("/home") / username / ".config/google-chrome/Local State"
+        return linux_path if linux_path.exists() else None
+
+    def _load_chrome_profiles() -> dict[str, str]:
+        local_state_path = _get_chrome_local_state_path()
+        if not local_state_path or not local_state_path.exists():
+            return {}
+
+        try:
+            with local_state_path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+        profiles = data.get("profile", {}).get("info_cache", {})
+        return {
+            folder_name.lower(): profile_info.get("name", folder_name)
+            for folder_name, profile_info in profiles.items()
+        }
+
+    def _find_chrome_profile_name(query: str, profiles: dict[str, str]) -> str | None:
+        query_lower = query.lower()
+        for folder_name, display_name in profiles.items():
+            if folder_name in query_lower or display_name.lower() in query_lower:
+                return folder_name
+        return None
 
 
     
+
+
+    # functionality methods (open, close, etc.)
+    ## open methods
     def open_code(_: str) -> str:
         candidates = ["open code", "open vs code", "open visual studio code", "open friday code", "open IDE"]
         for candidate in candidates:
@@ -95,43 +138,23 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                     return "Opening Visual Studio Code IDE"
 
     def open_chrome(asks: str) -> str:
-        candidates = ["chrome", "google-chrome", "google-chrome-stable", "chromium", "chrome kholo", "open browser", "chrome browser"]
-        # for candidate in candidates:
-        #     if shutil.which(candidate) is not None:
-        #         subprocess.Popen([candidate])
-        #         speaker.say("Opening Chrome")
-        #         return "Opening Chrome."
-        # return launch(_open_command("https://www.google.com"), "Opening your default browser.")
+        chrome_path = Path("C:/Program Files/Google/Chrome/Application/chrome.exe")
+        if not chrome_path.exists():
+            return launch(["C:/Program Files/Google/Chrome/Application/chrome.exe", "--profile-Directory=Default"],"Opening Default Chrome")
 
-        system = platform.system().lower()
-        chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
-        # Compare normalized, non-empty env values to avoid empty-string matches
         asks_lower = asks.lower() if asks else ""
-        p1 = os.getenv("PROFILE_1")
-        p2 = os.getenv("PROFILE_2")
-        p3 = os.getenv("PROFILE_3")
-        p5 = os.getenv("PROFILE_5")
-        p6 = os.getenv("PROFILE_6")
-        p7 = os.getenv("PROFILE_7")
+        profiles = _load_chrome_profiles()
+        selected_profile = _find_chrome_profile_name(asks_lower, profiles)
 
-        speaker.say("Opening Chrome sir")
-        if p1 and p1.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 1'])
-        elif p2 and p2.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 2'])
-        elif p3 and p3.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 3'])
-        elif p5 and p5.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 5'])
-        elif p6 and p6.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 6'])
-        elif p7 and p7.lower() in asks_lower:
-            subprocess.Popen([chrome_path, '--profile-directory=Profile 7'])
-        else:
-            subprocess.Popen([chrome_path, '--profile-directory=Default'])
-        
-        # return launch(command, "Opening Chrome")
-        return "Opening Chrome"
+        args = [str(chrome_path)]
+        if selected_profile:
+            args.append(f"--profile-directory={selected_profile}")
+            speaker.say(f"Opening Chrome profile {profiles[selected_profile]}")
+            return subprocess.Popen(args) and f"Opening Chrome profile {profiles[selected_profile]}."
+
+        speaker.say("Opening Chrome default profile")
+        subprocess.Popen(args + ["--profile-directory=Default"])
+        return "Opening Chrome default profile."
 
     
     def open_youtube(_:str) -> str:
@@ -162,6 +185,58 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         speaker.say("Opening WhatsApp")
         return launch(command, "Opening WhatsApp.")
     
+    ## close methods
+    def close_whatsapp(_: str) -> str:
+        print("Closing WhatsApp Application.")
+        if is_open("whatsapp"):
+            speaker.say("Closing WhatsApp application")
+            time.sleep(2)
+            try:
+                os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+            except Exception as e:
+                speaker.say("WhatsApp application is not open, or there is any error in function")
+                return "WhatsApp issue (close_whatsapp)"
+        return "WhatsApp Application closed."
+    
+    def close_code(_: str) -> str:
+        print("Closing Visual Studio Code IDE")
+        if is_open("code"):
+            try:
+                speaker.say("Closing VS Code IDE")
+                os.system("taskkill /f /im code.exe")
+            except Exception as e:
+                speaker.say("Failed to close VS Code IDE")
+                return "Failed to close IDE: close_code"
+        return "Closed VS Code IDE"
+    
+    def close_chrome(_: str) -> str:
+        print("Closing Chrome.")
+        if is_open("chrome"):
+            speaker.say("Closing Chrome")
+            time.sleep(2)
+            try:
+                os.system("taskkill /f /im chrome.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+            except Exception as e:
+                speaker.say("Chrome is not open, or there is any error in function")
+                return "Chrome issue (close_chrome)"
+        return "Google Chrome closed."
+    
+    def close_chrome_tabs(_:str) -> str:
+        if is_open("chrome"):
+            time.sleep(1.5)
+            try:
+                open_chrome("open chrome")
+                pg.hotkey("ctrl","shift","w")
+                speaker.say("Closed All tabs")
+                return "Closed all tabs"
+            except Exception as e:
+                speaker.say("There is any issue in closing all tabs")
+                return "There is any issue in closing all tabs"
+        speaker.say("Chrome Browser is already closed")
+        return "Chrome browser is already closed"
+    
+
+    # complex methods
     def send_whatsapp_msg(query: str) -> str:
         query_lower = query.lower().strip()
         if not query_lower:
@@ -227,57 +302,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         pg.press("enter")
         speaker.say(f"Sent WhatsApp group message to {recipient}.")
         return f"Sent WhatsApp group message to {recipient}."
-    
-    def close_whatsapp(_: str) -> str:
-        print("Closing WhatsApp Application.")
-        if is_open("whatsapp"):
-            speaker.say("Closing WhatsApp application")
-            time.sleep(2)
-            try:
-                os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
-            except Exception as e:
-                speaker.say("WhatsApp application is not open, or there is any error in function")
-                return "WhatsApp issue (close_whatsapp)"
-        return "WhatsApp Application closed."
-    
-    def close_code(_: str) -> str:
-        print("Closing Visual Studio Code IDE")
-        if is_open("code"):
-            try:
-                speaker.say("Closing VS Code IDE")
-                os.system("taskkill /f /im code.exe")
-            except Exception as e:
-                speaker.say("Failed to close VS Code IDE")
-                return "Failed to close IDE: close_code"
-        return "Closed VS Code IDE"
-    
-    def close_chrome(_: str) -> str:
-        print("Closing Chrome.")
-        if is_open("chrome"):
-            speaker.say("Closing Chrome")
-            time.sleep(2)
-            try:
-                os.system("taskkill /f /im chrome.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
-            except Exception as e:
-                speaker.say("Chrome is not open, or there is any error in function")
-                return "Chrome issue (close_chrome)"
-        return "Google Chrome closed."
-    
-    def close_chrome_tabs(_:str) -> str:
-        if is_open("chrome"):
-            time.sleep(1.5)
-            try:
-                open_chrome("open chrome")
-                pg.hotkey("ctrl","shift","w")
-                speaker.say("Closed All tabs")
-                return "Closed all tabs"
-            except Exception as e:
-                speaker.say("There is any issue in closing all tabs")
-                return "There is any issue in closing all tabs"
-        speaker.say("Chrome Browser is already closed")
-        return "Chrome browser is already closed"
         
 
+    # system methods
     def current_time(_: str) -> str:
         speaker.say(f"The time is {dt.datetime.now().strftime('%I:%M %p')}")
         return f"The time is {dt.datetime.now().strftime('%I:%M %p')}."

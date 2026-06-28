@@ -16,8 +16,8 @@ class MicrophoneCommandRecognizer:
         try:
             with self.sr.Microphone() as source:
                 print("Listening...")
-                self.recognizer.adjust_for_ambient_noise(source, duration=0.8)
-                audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=8)
+                self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
+                audio = self.recognizer.listen(source, timeout=7, phrase_time_limit=12)
             print("Recognizing...")
             query = self.recognizer.recognize_google(audio, language="en-IN")
             print(f"You: {query}")
