@@ -215,7 +215,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
             speaker.say("Closing Chrome")
             time.sleep(2)
             try:
-                os.system("taskkill /f /im chrome.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+                os.system("taskkill /f /im chrome.exe")
             except Exception as e:
                 speaker.say("Chrome is not open, or there is any error in function")
                 return "Chrome issue (close_chrome)"
@@ -234,9 +234,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                 return "There is any issue in closing all tabs"
         speaker.say("Chrome Browser is already closed")
         return "Chrome browser is already closed"
-    
 
     # complex methods
+    ## send whatsapp message
     def send_whatsapp_msg(query: str) -> str:
         query_lower = query.lower().strip()
         if not query_lower:
@@ -340,7 +340,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
 
     registry.register(Tool("close_whatsapp", "Close the WhatsApp Application.", ["close whatsapp", "whatsapp band karo"], close_whatsapp))
 
-    registry.register(Tool("close_chrome", "Close the Browser or Google Chrome.", ["Close chrome", "close google chrome","chrome band karo", "google chrome band karo"], close_chrome))
+    registry.register(Tool("close_chrome", "Close the Browser or Google Chrome.", ["Close chrome", "close google chrome","chrome band karo", "google chrome band karo", "chrome band kardo", "chrome profile band karo"], close_chrome))
 
     registry.register(Tool("close_chrome_tabs", "Close all chrome browser tabs", ["Close All tabs", "sare tabs band kar do", "close each tabs", "close chrome tabs", "browser tabs band kardo"], close_chrome_tabs))
 
