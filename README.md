@@ -40,8 +40,8 @@ Welcome! This project is called "Friday" and it's like Tony Stark's helper, Frid
 ```mermaid
 flowchart TD
   A[Start: main.py] --> B[Wake word detection]
-  B -->|Wake word heard| C[Face auth]
-  C --> D[Speaker verification]
+  B -->|Wake word heard| C[Speaker Verification]
+  C --> D[Face Authentication]
   D --> E[Greeting]
   E --> F[Capture: speech or text]
   F --> G[Intent Router]
