@@ -350,7 +350,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
             search_roots.append(str(home_dir))
 
             if platform.system().lower() == "windows":
-                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("E:/")]:
+                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("E:/", Path("C:/"))]:
                     if root.exists():
                         search_roots.append(str(root))
             else:
