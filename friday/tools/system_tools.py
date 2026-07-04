@@ -43,6 +43,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry = ToolRegistry()
     speaker = Speaker()
 
+    # Create screenshots folder if not exist
+    DEFAULT_SCREENSHOT_DIR = os.path.join(os.path.expanduser("~"), "Friday_Screenshots")
+    os.makedirs(DEFAULT_SCREENSHOT_DIR, exist_ok=True)
 
     # utilities methods (launch any command, check application is open or not, finding any directory or file, etc.)
     def launch(command: list[str], success_message: str) -> str:
@@ -112,6 +115,22 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                 return folder_name
         return None
 
+
+    def find_folder(target_folder_name, search_path):
+        target_name = (target_folder_name or "").strip().lower()
+        if not target_name or not search_path:
+            return []
+
+        all_paths = []
+        seen = set()
+        for root, dirs, _ in os.walk(search_path):
+            for directory in dirs:
+                if directory.lower() == target_name:
+                    path = os.path.join(root, directory)
+                    if path not in seen:
+                        all_paths.append(path)
+                        seen.add(path)
+        return all_paths
 
     
 
@@ -302,9 +321,82 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         pg.press("enter")
         speaker.say(f"Sent WhatsApp group message to {recipient}.")
         return f"Sent WhatsApp group message to {recipient}."
-        
 
-    # system methods
+    def take_screenshot(query: str) -> str:
+        try:
+            spoken_query = (query or "").strip()
+            speaker.say("I’m taking the screenshot now.")
+
+            directory_name = None
+            file_name = None
+
+            if spoken_query:
+                directory_match = re.search(r"\b(?:in|inside|folder|directory|path)\s+(?:the\s+)?([a-zA-Z0-9 _.-]+)", spoken_query, re.I)
+                if directory_match:
+                    directory_name = directory_match.group(1).strip()
+
+                name_match = re.search(r"\b(?:name|named|call it|called|title|save as)\s+(?:it\s+)?([a-zA-Z0-9 _.-]+)", spoken_query, re.I)
+                if name_match:
+                    file_name = name_match.group(1).strip()
+
+            if not file_name:
+                file_name = f"screenshot_IMG{int(time.time())}"
+
+            filename = f"{file_name}.png" if not file_name.lower().endswith(".png") else file_name
+
+            resolved_dir = None
+            search_roots = []
+            home_dir = Path.home()
+            search_roots.append(str(home_dir))
+
+            if platform.system().lower() == "windows":
+                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("E:/")]:
+                    if root.exists():
+                        search_roots.append(str(root))
+            else:
+                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("/tmp")]:
+                    if root.exists():
+                        search_roots.append(str(root))
+
+            if directory_name:
+                cleaned_dir = re.sub(r"^(the|a|an)\s+", "", directory_name, flags=re.I).strip()
+                for root in search_roots:
+                    candidate = Path(root) / cleaned_dir
+                    if candidate.exists() and candidate.is_dir():
+                        resolved_dir = str(candidate)
+                        break
+
+                if not resolved_dir:
+                    for root in search_roots:
+                        found = find_folder(cleaned_dir, root)
+                        if found:
+                            resolved_dir = found[0]
+                            break
+
+            if not resolved_dir:
+                resolved_dir = DEFAULT_SCREENSHOT_DIR
+                if directory_name:
+                    speaker.say(f"I could not find '{directory_name}', so I’m saving it to the default screenshot folder.")
+                else:
+                    speaker.say("No folder was specified, so I’m saving it to the default screenshot folder.")
+            else:
+                # speaker.say(f"Saving the screenshot in {resolved_dir}")
+                print(f"Saving the screenshot in {resolved_dir}")
+
+            os.makedirs(resolved_dir, exist_ok=True)
+            path = os.path.join(resolved_dir, filename)
+            img = pg.screenshot()
+            img.save(path)
+            # speaker.say(f"Screenshot saved to {path}")
+            print(f"Screenshot saved to {path}")
+            return f"Screenshot saved to {path}."
+
+        except Exception as e:
+            speaker.say("An unexpected error occurred while taking the screenshot.")
+            print("Screenshot error:", e)
+            return "An unexpected error occurred while taking the screenshot."
+
+    # system methods    
     def current_time(_: str) -> str:
         speaker.say(f"The time is {dt.datetime.now().strftime('%I:%M %p')}")
         return f"The time is {dt.datetime.now().strftime('%I:%M %p')}."
@@ -333,6 +425,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry.register(Tool("open_notepad", "Open a note-taking app or file browser.", ["open notepad", "start notes", "write a quick note"], open_notepad))
 
     registry.register(Tool("open_whatsapp", "Open a chat app or WhatsApp application", ["open whatsapp", "chat application", "start Whatsapp", "whatsapp kholo", "whatsapp chalu karo"], open_whatsapp))
+
 
 
 # close functionalities
@@ -389,6 +482,11 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry.register(Tool(
         "send_whatsapp_msg", "Send WhatsApp message to the directed person or group.", ["send message", "send whatsapp message", "message bhejo", "whatsapp message bhejo"],
         send_whatsapp_msg
+    ))
+
+    registry.register(Tool(
+        "take_screenshot", "Take a screenshot and save it to the specified directory.", ["take screenshot", "capture screen", "screenshot le lo", "screen capture karo"],
+        take_screenshot
     ))
 
     return registry
