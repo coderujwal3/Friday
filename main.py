@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--llm-router", action="store_true", help="Use an LLM as a fallback when embedding confidence is low.")
     parser.add_argument("--no-speech", action="store_true", help="Print responses without speaking them aloud.")
     parser.add_argument("--threshold", type=float, default=0.55, help="Minimum embedding confidence required to execute a tool.")
-    parser.add_argument("--voice-threshold", type=float, default=0.60, help="Minimum speaker similarity required for voice verification.")
+    parser.add_argument("--voice-threshold", type=float, default=0.50, help="Minimum speaker similarity required for voice verification.")
     return parser.parse_args()
 
 

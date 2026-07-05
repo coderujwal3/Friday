@@ -6,6 +6,7 @@ import numpy as np
 import speech_recognition as sr
 from scipy.io import wavfile
 from scipy.signal import resample_poly
+from speech_recognition import audio
 
 from ..config import AssistantConfig
 
@@ -23,7 +24,7 @@ class SpeakerVerifier:
         self._vad_model = None
         self._vad_utils = None
 
-    def verify(self, expected_user: Optional[str] = None) -> bool:
+    def verify(self, expected_user: Optional[str] = None, raw_wav: Optional[bytes] = None, sample_rate: Optional[int] = None) -> bool:
         expected_user = (expected_user or self.config.user_name or "").strip().lower()
         if not expected_user:
             print("Voice verification failed: expected username is not configured.")
@@ -32,10 +33,16 @@ class SpeakerVerifier:
             print(f"Voice verification failed: no enrolled voice embeddings found in {self.voice_db_dir}")
             return False
 
-        print("Starting voice verification. Please say a short phrase after the beep.")
-        audio, sample_rate = self._record_microphone_sample(duration=5)
-        if audio is None:
-            return False
+        if raw_wav is None or sample_rate is None:
+            print("Starting voice verification. Please say a short phrase after the beep.")
+            audio, sample_rate = self._record_microphone_sample(duration=2)
+            if audio is None:
+                return False
+        else:
+            audio, sample_rate = self._decode_audio_bytes(raw_wav)
+            if audio is None:
+                print("Voice verification failed: could not decode wake-word audio.")
+                return False
 
         voice_segment = self._extract_voice_segment(audio, sample_rate)
         if voice_segment is None or len(voice_segment) < self.sample_rate // 2:
@@ -65,7 +72,7 @@ class SpeakerVerifier:
         print("Voice verification successful.")
         return True
 
-    def enroll(self, sample_label: str, duration: int = 5) -> Optional[Path]:
+    def enroll(self, sample_label: str, duration: int = 2) -> Optional[Path]:
         sample_label = sample_label.strip().replace(" ", "_")
         if not sample_label:
             print("Enrollment failed: please provide a non-empty label.")
@@ -124,15 +131,22 @@ class SpeakerVerifier:
         print(f"Loaded embeddings for users: {list(embeddings.keys())}")
         return embeddings
 
-    def _record_microphone_sample(self, duration: int = 5) -> Tuple[Optional[np.ndarray], Optional[int]]:
+    def _record_microphone_sample(self, duration: int = 2) -> Tuple[Optional[np.ndarray], Optional[int]]:
         try:
             recognizer = sr.Recognizer()
             with sr.Microphone() as source:
                 print("Adjusting for ambient noise...")
-                recognizer.adjust_for_ambient_noise(source, duration=0.7)
+                recognizer.adjust_for_ambient_noise(source, duration=0.8)
                 print("Recording voice sample...")
                 audio = recognizer.record(source, duration=duration)
             raw_wav = audio.get_wav_data()
+            return self._decode_audio_bytes(raw_wav)
+        except Exception as error:
+            print(f"Audio capture failed: {error}")
+            return None, None
+
+    def _decode_audio_bytes(self, raw_wav: bytes) -> Tuple[Optional[np.ndarray], Optional[int]]:
+        try:
             sample_rate, waveform = wavfile.read(io.BytesIO(raw_wav))
             waveform = self._normalize_waveform(waveform)
             if sample_rate != self.sample_rate:
@@ -140,7 +154,7 @@ class SpeakerVerifier:
                 sample_rate = self.sample_rate
             return waveform, sample_rate
         except Exception as error:
-            print(f"Audio capture failed: {error}")
+            print(f"Audio decode failed: {error}")
             return None, None
 
     def _normalize_waveform(self, waveform: np.ndarray) -> np.ndarray:

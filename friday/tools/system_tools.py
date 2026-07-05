@@ -53,7 +53,6 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         if shutil.which(executable) is None:
             speaker.say(f"Matched the tool, but '{executable}' is not installed on this machine.")
             return f"Matched the tool, but '{executable}' is not installed on this machine."
-        print(f"{("-"*20)} command for execution {command} {("-"*20)}")
         subprocess.Popen(command)
         return success_message
     
@@ -350,7 +349,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
             search_roots.append(str(home_dir))
 
             if platform.system().lower() == "windows":
-                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("E:/", Path("C:/"))]:
+                for root in [home_dir / "Desktop", home_dir / "Documents", home_dir / "Downloads", Path("E:/")]:
                     if root.exists():
                         search_roots.append(str(root))
             else:

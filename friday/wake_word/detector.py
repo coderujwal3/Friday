@@ -1,6 +1,15 @@
 import importlib
 import re
+from dataclasses import dataclass
 from typing import Iterable
+from ..config import AssistantConfig
+
+
+@dataclass
+class WakeWordResult:
+    command: str
+    audio: bytes | None = None
+    sample_rate: int | None = None
 
 
 class ConsoleWakeWordDetector:
@@ -14,7 +23,7 @@ class ConsoleWakeWordDetector:
         self.wake_phrases = [phrase.strip().lower() for phrase in (wake_phrases or ["friday"])]
         self.pause_phrases = [phrase.strip().lower() for phrase in (pause_phrases or [])]
 
-    def wait(self) -> str:
+    def wait(self) -> WakeWordResult:
         phrases = ", ".join(self.wake_phrases)
         print(f"Say/type one of the wake phrases: {phrases}")
         while True:
@@ -22,7 +31,7 @@ class ConsoleWakeWordDetector:
             if not text:
                 continue
             if self.is_wake_phrase(text):
-                return self.extract_command(text)
+                return WakeWordResult(command=self.extract_command(text))
             print("No wake phrase detected. Try again.")
 
     def is_wake_phrase(self, text: str) -> bool:
@@ -35,10 +44,11 @@ class ConsoleWakeWordDetector:
 
     def extract_command(self, text: str) -> str:
         normalized = self._normalize(text)
-        for phrase in self.wake_phrases:
-            if phrase in normalized:
-                remainder = normalized.replace(phrase, "", 1).strip()
-                return remainder
+        for phrase in sorted(self.wake_phrases, key=len, reverse=True):
+            if normalized == phrase:
+                return ""
+            if normalized.startswith(f"{phrase} "):
+                return normalized[len(phrase):].strip()
         return ""
 
     @staticmethod
@@ -61,17 +71,26 @@ class SpeechWakeWordDetector(ConsoleWakeWordDetector):
         self.timeout = timeout
         self.phrase_time_limit = phrase_time_limit
 
-    def wait(self) -> str:
+    def _is_shutdown_command(self, query: str) -> bool:
+        normalized = " ".join(query.lower().split())
+        shutdown_phrase = " ".join(AssistantConfig().shutdown_phrase.lower().split())
+        return normalized in {"exit", "quit", "stop"} or shutdown_phrase in normalized
+
+    def wait(self) -> WakeWordResult:
         print("Listening for the wake phrase...")
         while True:
             try:
                 with self.sr.Microphone() as source:
                     self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
                     audio = self.recognizer.listen(source, timeout=self.timeout, phrase_time_limit=self.phrase_time_limit)
+                raw_wav = audio.get_wav_data()
                 query = self.recognizer.recognize_google(audio, language="en-IN").strip().lower()
                 print(f"Heard: {query}")
                 if self.is_wake_phrase(query):
-                    return self.extract_command(query)
+                    return WakeWordResult(command=self.extract_command(query), audio=raw_wav, sample_rate=16000)
+                if self._is_shutdown_command(query):
+                    return WakeWordResult(command=query, audio=raw_wav, sample_rate=16000)
+                
             except self.sr.WaitTimeoutError:
                 print("Waiting for the wake phrase...")
             except self.sr.UnknownValueError:

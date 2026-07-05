@@ -5,7 +5,7 @@ from friday.intent.router import IntentRouter
 from friday.speaker import Speaker
 from friday.speech.recognizer import MicrophoneCommandRecognizer, TextCommandRecognizer
 from friday.tools.system_tools import build_default_registry
-from friday.wake_word.detector import ConsoleWakeWordDetector, SpeechWakeWordDetector
+from friday.wake_word.detector import ConsoleWakeWordDetector, SpeechWakeWordDetector, WakeWordResult
 
 
 class FridayAssistant:
@@ -25,20 +25,17 @@ class FridayAssistant:
 
     def run(self) -> None:
         while True:
-            wake_query = self.wake_word.wait()
-            if not self._authenticate():
+            self.speaker.say("Enabling Voice Authentication")
+            wake_result = self.wake_word.wait()
+            if not self._authenticate(raw_wav=wake_result.audio, sample_rate=wake_result.sample_rate):
                 self.speaker.say("Authentication failed. Try again")
                 continue
 
-            if wake_query:
-                query = wake_query
-            else:
-                query = ""
+            query = wake_result.command or ""
 
             while True:
                 if not query:
                     query = self.recognizer.listen()
-                if not query:
                     continue
 
                 if self._is_pause_command(query):
@@ -46,13 +43,15 @@ class FridayAssistant:
                     break
 
                 if self._is_shutdown_command(query):
-                    self.speaker.say("Have a good day sir, goodbye")
+                    self.speaker.say("Have a good day boss, goodbye")
                     return
 
                 result = self.router.route(query)
-                if result.tool_name is None:
+                a = 0   # --------------- jugaad - to avoid initial bug (just after verifying voice, the first command is not recognized properly, so this is a temporary fix)
+                if result.tool_name is None and a:
                     self.speaker.say("I could not confidently match that command.")
                     query = ""
+                    a += 1
                     continue
 
                 message = self.registry.execute(result.tool_name, query)
@@ -68,9 +67,14 @@ class FridayAssistant:
         normalized = " ".join(query.lower().split())
         return any(phrase in normalized for phrase in self.config.pause_phrases)
 
-    def _authenticate(self) -> bool:
-        voice_auth_result = self.speaker_verifier.verify(expected_user=self.user_name)
+    def _authenticate(self, raw_wav: bytes | None = None, sample_rate: int | None = None) -> bool:
+        voice_auth_result = self.speaker_verifier.verify(
+            expected_user=self.user_name,
+            raw_wav=raw_wav,
+            sample_rate=sample_rate,
+        )
         if voice_auth_result:
+            self.speaker.say("Voice authentication successful, please see in your camera for face authentication.")
             face_auth_result = FaceAuthenticator.authenticate()
             authenticated = False
             authenticated_user = None
@@ -83,8 +87,8 @@ class FridayAssistant:
 
             if authenticated and authenticated_user:
                 self.user_name = authenticated_user
-                self.speaker.say(f"Welcome {authenticated_user}, how can I help?")
+                self.speaker.say(f"Welcome {authenticated_user} Boss, how can I help?")
             elif authenticated:
-                self.speaker.say("Welcome, how can I help?")
+                self.speaker.say("Welcome Boss, how can I help?")
 
             return authenticated and voice_auth_result
