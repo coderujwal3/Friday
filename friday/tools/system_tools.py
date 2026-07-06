@@ -60,14 +60,15 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         dictionary = {
             "chrome": ["chrome.exe", "chrome", "google-chrome"],
             "code": ["code.exe", "code", "visual studio code"],
-            "whatsapp": ["WhatsApp.exe", "WhatsApp.Root.exe", "WhatsApp"]
+            "whatsapp": ["WhatsApp.exe", "WhatsApp.Root.exe", "WhatsApp"],
+            "notepad": ["Notepad.exe", "notepad.exe", "notepad"],
         }
 
         if program in dictionary:
             # Iterate through all running processes
             for proc in psutil.process_iter(['name']):
                 try:
-                    # Check if any running process name matches Chrome
+                    # Check if any running process name matches the program
                     if proc.info['name'].lower() in dictionary[program]:
                         return True
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -227,6 +228,18 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                 return "Failed to close IDE: close_code"
         return "Closed VS Code IDE"
     
+    def close_notepad(_: str) -> str:
+        print("Closing Notepad.")
+        if is_open("notepad"):
+            speaker.say("Closing Notepad")
+            time.sleep(2)
+            try:
+                os.system("taskkill /f /im notepad.exe")
+            except Exception as e:
+                speaker.say("Notepad is not open, or there is any error in function")
+                return "Notepad issue (close_notepad)"
+        return "Notepad closed."
+
     def close_chrome(_: str) -> str:
         print("Closing Chrome.")
         if is_open("chrome"):
@@ -433,6 +446,8 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry.register(Tool("close_whatsapp", "Close the WhatsApp Application.", ["close whatsapp", "whatsapp band karo"], close_whatsapp))
 
     registry.register(Tool("close_chrome", "Close the Browser or Google Chrome.", ["Close chrome", "close google chrome","chrome band karo", "google chrome band karo", "chrome band kardo", "chrome profile band karo"], close_chrome))
+    
+    registry.register(Tool("close_notepad", "Close the Notepad Application.", ["close notepad", "notepad band karo", "notes application band karo", "notes app band karo"], close_notepad))
 
     registry.register(Tool("close_chrome_tabs", "Close all chrome browser tabs", ["Close All tabs", "sare tabs band kar do", "close each tabs", "close chrome tabs", "browser tabs band kardo"], close_chrome_tabs))
 

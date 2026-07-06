@@ -48,6 +48,7 @@ class FridayAssistant:
                 if self._is_shutdown_command(query):
                     self.speaker.say("Have a good day boss, goodbye")
                     return
+                
 
                 result = self.router.route(query)
                 if result.tool_name is None and a:

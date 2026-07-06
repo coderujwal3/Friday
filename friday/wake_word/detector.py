@@ -71,11 +71,6 @@ class SpeechWakeWordDetector(ConsoleWakeWordDetector):
         self.timeout = timeout
         self.phrase_time_limit = phrase_time_limit
 
-    def _is_shutdown_command(self, query: str) -> bool:
-        normalized = " ".join(query.lower().split())
-        shutdown_phrase = " ".join(AssistantConfig().shutdown_phrase.lower().split())
-        return normalized in {"exit", "quit", "stop"} or shutdown_phrase in normalized
-
     def wait(self) -> WakeWordResult:
         print("Listening for the wake phrase...")
         while True:
@@ -88,8 +83,6 @@ class SpeechWakeWordDetector(ConsoleWakeWordDetector):
                 print(f"Heard: {query}")
                 if self.is_wake_phrase(query):
                     return WakeWordResult(command=self.extract_command(query), audio=raw_wav, sample_rate=16000)
-                if self._is_shutdown_command(query):
-                    return WakeWordResult(command=query, audio=raw_wav, sample_rate=16000)
                 
             except self.sr.WaitTimeoutError:
                 print("Waiting for the wake phrase...")
