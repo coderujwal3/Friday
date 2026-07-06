@@ -25,7 +25,10 @@ class FridayAssistant:
 
     def run(self) -> None:
         while True:
-            self.speaker.say("Enabling Voice Authentication")
+            a = 0   # --------------- jugaad - to avoid initial bug (just after verifying voice, the first command is not recognized properly, so this is a temporary fix)
+            if a ==0:
+                self.speaker.say("Login with code word")
+
             wake_result = self.wake_word.wait()
             if not self._authenticate(raw_wav=wake_result.audio, sample_rate=wake_result.sample_rate):
                 self.speaker.say("Authentication failed. Try again")
@@ -47,7 +50,6 @@ class FridayAssistant:
                     return
 
                 result = self.router.route(query)
-                a = 0   # --------------- jugaad - to avoid initial bug (just after verifying voice, the first command is not recognized properly, so this is a temporary fix)
                 if result.tool_name is None and a:
                     self.speaker.say("I could not confidently match that command.")
                     query = ""

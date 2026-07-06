@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from friday.config import AssistantConfig
 from friday.tools.registry import Tool, ToolRegistry
 from friday.speaker import Speaker
-# from friday.tools.conversation import ConversationHandler
+from friday.tools.conversation import ConversationHandler
 
 load_dotenv()
 
@@ -208,7 +208,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         print("Closing WhatsApp Application.")
         if is_open("whatsapp"):
             speaker.say("Closing WhatsApp application")
-            time.sleep(2)
+            # time.sleep(2)
             try:
                 os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
             except Exception as e:
@@ -446,34 +446,12 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     
 
 
-
-    # # Conversational tools for small talk and greetings
+# conversation functionalities
     # registry.register(Tool(
-    #     "greeting",
-    #     "Respond to greetings and hello.",
-    #     ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "hey friday"],
-    #     ConversationHandler.handle_greeting
-    # ))
-    
-    # registry.register(Tool(
-    #     "how_are_you",
-    #     "Respond to questions about how you are doing.",
-    #     ["how are you", "how are you doing", "how's it going", "how you doing", "you okay", "all okay", "you alright", "kaise ho"],
-    #     ConversationHandler.handle_how_are_you
-    # ))
-    
-    # registry.register(Tool(
-    #     "what_up",
-    #     "Respond to casual questions about what you're up to. You can update the response, don't try to copy paste the response",
-    #     ["what's up", "whats up", "what you doing", "what have you done", "what you been doing", "kya kar rahe ho", "kya haal chaal bidu", "kaisa chal raha bro", "all exciting ?"],
-    #     ConversationHandler.handle_what_up
-    # ))
-    
-    # registry.register(Tool(
-    #     "small_talk",
-    #     "Respond to general small talk and casual conversation.",
-    #     ["thanks", "thank you", "nice", "that's cool", "that sounds good", "interesting", "awesome", "good job"],
-    #     ConversationHandler.handle_small_talk
+    #     "conversation",
+    #     "Respond to greetings, small talk, and casual conversation.",
+    #     ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thanks", "thank you", "nice", "cool", "awesome", "interesting", "hey friday"],
+    #     ConversationHandler.handle,
     # ))
 
 
