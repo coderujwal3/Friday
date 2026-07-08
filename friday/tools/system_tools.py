@@ -16,7 +16,8 @@ from dotenv import load_dotenv
 from friday.config import AssistantConfig
 from friday.tools.registry import Tool, ToolRegistry
 from friday.speaker import Speaker
-from friday.tools.conversation import ConversationHandler
+# from friday.tools.conversation import ConversationHandler
+from friday.tools.read_writeOp import read_write_operation
 
 load_dotenv()
 
@@ -42,6 +43,9 @@ def _open_command(target: str) -> list[str]:
 def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry = ToolRegistry()
     speaker = Speaker()
+    
+    # Create instance of read_write_operation
+    read_write_op = read_write_operation(speaker)
 
     # Create screenshots folder if not exist
     DEFAULT_SCREENSHOT_DIR = os.path.join(os.path.expanduser("~"), "Friday_Screenshots")
@@ -468,6 +472,14 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     #     ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thanks", "thank you", "nice", "cool", "awesome", "interesting", "hey friday"],
     #     ConversationHandler.handle,
     # ))
+
+## Write in file functionality
+    registry.register(Tool(
+        "read_write_operation", 
+        "Perform write operations for file.", 
+        ["write file", "file likho", "write", "likho", "right"], 
+        read_write_op.write_operation
+    ))
 
 
 # complex functionalities

@@ -6,6 +6,7 @@ import numpy as np
 import speech_recognition as sr
 from scipy.io import wavfile
 from scipy.signal import resample_poly
+from friday.speaker import Speaker
 from speech_recognition import audio
 
 from ..config import AssistantConfig
