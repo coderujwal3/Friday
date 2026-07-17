@@ -30,7 +30,7 @@ class AssistantConfig:
         "go to sleep",
         "good night friday",
     ))
-    dry_run_dangerous_tools: bool = False               # False: if really want to shutdown the pc, False: if you want to just mimic the shutdown process (do not shuts the pc)
+    dry_run_dangerous_tools: bool = True               # False: if really want to shutdown the pc, False: if you want to just mimic the shutdown process (do not shuts the pc)
     voice_db_dir: Path = field(default_factory=lambda: Path(__file__).resolve().parent / "auth" / "voice_db")
     voice_threshold: float = 0.50
     data_dir: Path = field(default_factory=lambda: Path.home() / ".friday")

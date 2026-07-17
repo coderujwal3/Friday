@@ -213,12 +213,23 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
         print("Closing WhatsApp Application.")
         if is_open("whatsapp"):
             speaker.say("Closing WhatsApp application")
-            # time.sleep(2)
             try:
-                os.system("taskkill /f /im WhatsApp.Root.exe")  # for WhatsApp Beta - if using WhatsApp then change it to: WhatsApp.exe
+                result = subprocess.run(
+                    ["taskkill", "/F", "/T", "/IM", "WhatsApp.Root.exe"],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    result = subprocess.run(
+                        ["taskkill", "/F", "/T", "/IM", "WhatsApp.exe"],
+                        capture_output=True,
+                        text=True,
+                    )
+                if result.returncode != 0:
+                    return f"Failed to close WhatsApp: {result.stderr.strip()}"
             except Exception as e:
-                speaker.say("WhatsApp application is not open, or there is any error in function")
-                return "WhatsApp issue (close_whatsapp)"
+                speaker.say("There was an error closing WhatsApp.")
+                return f"WhatsApp issue (close_whatsapp): {e}"
         return "WhatsApp Application closed."
     
     def close_code(_: str) -> str:
@@ -392,9 +403,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
             if not resolved_dir:
                 resolved_dir = DEFAULT_SCREENSHOT_DIR
                 if directory_name:
-                    speaker.say(f"I could not find '{directory_name}', so I’m saving it to the default screenshot folder.")
+                    speaker.say(f"I could not find '{directory_name}', so I'm saving it to the default screenshot folder.")
                 else:
-                    speaker.say("No folder was specified, so I’m saving it to the default screenshot folder.")
+                    speaker.say("No folder was specified, so I'm saving it to the default screenshot folder.")
             else:
                 # speaker.say(f"Saving the screenshot in {resolved_dir}")
                 print(f"Saving the screenshot in {resolved_dir}")
@@ -461,7 +472,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry.register(Tool("current_time", "Tell the current local time.", ["what time is it", "tell me the time", "current time please", "time batao", "time kya hua hai", "current time batao"], current_time))
     
     # make dangerous "True" when you actually don't want to shutdown (mimic shutdown). If using False then understand that - all programs will be closed and the system will get shutdown --forcefully.
-    registry.register(Tool("shutdown_pc", "Shutdown the computer.", ["shutdown pc", "power off computer", "power off system", "laptop band karo"], shutdown, dangerous=False))
+    registry.register(Tool("shutdown_pc", "Shutdown the computer.", ["shutdown pc", "power off computer", "power off system", "laptop band karo"], shutdown, dangerous=True))
     
 
 
@@ -477,7 +488,7 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
     registry.register(Tool(
         "read_write_operation", 
         "Perform write operations for file.", 
-        ["write file", "file likho", "write", "likho", "right"], 
+        ["write file", "file likho", "write", "likho", "write hello how are you and save as hello", "write hello how are you in file hello", "write hello how are you in file hello", "write hello how are you and save as hello", "write hello how are you in file hello and save as hello"],
         read_write_op.write_operation
     ))
 
