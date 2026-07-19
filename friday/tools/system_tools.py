@@ -148,8 +148,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
                 if candidate in ["friday project open karo", "open friday code", "open friday project", "friday project kholo", "apna code kholo", "vs code me friday ko open karo"]:
                     project_path = "E://Programming/Virtual_Voice_Assistant/Friday/"
                     if os.path.exists(project_path):
-                        system = platform.system().lower()
-                        command = ["subprocess.run(['explorer', os.path.normpath(path)])"] if system == "windows" else [subprocess.run(["xdg-open", project_path])]
+                        # system = platform.system().lower()
+                        # command = ["subprocess.run(['explorer', os.path.normpath(path)])"] if system == "windows" else [subprocess.run(["xdg-open", project_path])]
+                        command = ["code", project_path]
                         speaker.say("Opening Friday Code in visual studio code IDE")
                         return launch(command, "Opening Friday Assistant Project in IDE")
                     else:
@@ -215,13 +216,13 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
             speaker.say("Closing WhatsApp application")
             try:
                 result = subprocess.run(
-                    ["taskkill", "/F", "/T", "/IM", "WhatsApp.Root.exe"],
+                    ["taskkill", "/f", "/t", "/im", "WhatsApp.Root.exe"],
                     capture_output=True,
                     text=True,
                 )
                 if result.returncode != 0:
                     result = subprocess.run(
-                        ["taskkill", "/F", "/T", "/IM", "WhatsApp.exe"],
+                        ["taskkill", "/f", "/t", "/im", "WhatsApp.exe"],
                         capture_output=True,
                         text=True,
                     )
@@ -441,9 +442,9 @@ def build_default_registry(config: AssistantConfig) -> ToolRegistry:
 
 
 # Open Applications functionalities
-    registry.register(Tool("open_code", "Open Visual Studio Code IDE", ["open code", "open visual studio code", "open vs code", "vs code chalu karo", "code kholo", "vs code kholo", "friday project open karo", "open friday code", "open friday project", "friday project kholo", "apna code kholo", "vs code me friday ko open karo"], open_code))
+    registry.register(Tool("open_code", "Open Visual Studio Code IDE", ["open code", "open visual studio code", "open vs code", "vs code open karo", "code kholo", "vs code kholo", "friday project open karo", "open friday code", "open friday project", "friday project kholo", "friday code kholo", "friday vs code open karo"], open_code))
 
-    registry.register(Tool("open_chrome", "Open Chrome or the default browser.", ["open chrome", "launch browser", "start google chrome", "I need my browser", "chrome kholo", "browser", "browser chalu karo"], open_chrome))
+    registry.register(Tool("open_chrome", "Open Chrome or the default browser.", ["open chrome", "launch browser", "start google chrome", "I need my browser", "chrome kholo", "browser", "browser open karo"], open_chrome))
 
     registry.register(Tool("open_youtube", "Open Youtube in default browser.", ["open Youtube", "open YT", "YT", "start youtube", "start YT", "Youtube kholo", "YT kholo", "youtube chalu karo"], open_youtube))
 
